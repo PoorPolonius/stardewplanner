@@ -35,75 +35,82 @@ function Board (containerId, width, height) {
 		var sqHeight = 16;
 		var svg = 'M';
 		array.forEach(function(coord, index){
-			var xMod = 0;
-			var yMod = 0;
-			/*var prevIndex = index - 1;
-			var nextIndex = index + 1;
-			if(prevIndex < 0) prevIndex = array.length - 1;
-			if(nextIndex >= array.length) nextIndex = 0;
-
-			if(coord[0] > array[prevIndex][0] != 0) xMod = 1;
-			if(coord[1] > array[prevIndex][1] != 0) yMod = 1;
-
-			if(coord[0] > array[nextIndex][0] != 0) xMod = 1;
-			if(coord[1] > array[nextIndex][1] != 0) yMod = 1;
-
-			console.log({xMod: xMod, yMod: yMod});*/
-			svg += (coord[0] + xMod) * sqWidth + ',' + (coord[1] + yMod) * sqHeight + 'L';
+			svg += (coord[0] * sqWidth) + ',' + (coord[1] * sqHeight) + 'L';
 		});
 		svg = svg.substr(0, svg.length - 1) + 'z';
 		console.log('generated: ' + svg);
 		return svg;
 	};
 	
-	var origLeftSide = 'M0,0L640,0L640,128L560,128L560,96L544,96L544,128L64,128L64,144L48,144L48,368L112,368L112,544L80,544L80,560L64,560L64,576L48,576L48,992L640,992L640,1040L0,1040z';
-	var origTopRight = 'M672,0L672,128L736,128L736,112L768,112L768,128L784,128L784,112L848,112L848,144L880,144L880,160L1200,160L1200,176L1232,176L1232,160L1248,160L1248,176L1232,176L1232,192L1248,192L1248,240L1280,240L1280,0z';
-	var origBottomRight = 'M1232,304L1232,896L1168,896L1168,944L1104,944L1104,992L672,992L672,1040L1280,1040L1280,304z';
-	var origGreenhouse = 'M400,160L512,160L512,256L400,256z';
-	var origHouse = 'M944,176L1088,176L1088,256L1104,256L1104,272L944,272z';
-	var origShipBox = 'M1136,224L1168,224L1168,240L1136,240z';
-	var origLittlePond = 'M1120,448L1200,448L1200,464L1216,464L1216,528L1200,528L1200,544L1136,544L1136,528L1120,528L1120,448z';
-	var origBigPond = 'M576,784L688,784L688,800L704,800L704,816L736,816L736,832L752,832L752,896L736,896L736,912L720,912L720,928L672,928L672,944L592,944L592,928L576,928L576,912L544,912L544,880L528,880L528,832L544,832L544,816L560,816L560,800L576,800L576,784z';
+	//Rotates an array of coordinates to start at a certain point, so they can be concatenated together for reuse when doing the building boundries
+	this.rotateArrayStartPoint = function(array, startCoord){
+		var iterations = 0;
+		while(iterations < array.length && (array[0][0] != startCoord[0] || array[0][1] != startCoord[1])){
+			array.push(array.shift());
+			iterations++;
+		}
+		console.log({array: array})
+		return array;
+	};
 	
+	//Replaces a set of coordinates in one array with another set of coordinates. This allows resuse of section definitions
+	this.replaceCoordinateSet = function(array, originalCoords, replaceCoords){
+		console.log({array: array, originalCoords: originalCoords, replaceCoords: replaceCoords});
+		var indexOffset = array.findIndex(function(coord){return coord[0] == originalCoords[0][0] && coord[1] == originalCoords[0][1];});
+		for(var i = 1; i < originalCoords.length; i++){
+		console.log({indexOffset: indexOffset, orig: originalCoords[i], arr: array[indexOffset + i]})
+			if(originalCoords[i][0] != array[indexOffset + i][0] || originalCoords[i][1] != array[indexOffset + i][1]){
+				console.log("ERROR!");
+			}
+		}
+		array.splice(indexOffset, originalCoords.length);
+		for(var i = replaceCoords.length - 1; i >= 0; i--){
+			array.splice(indexOffset, 0, replaceCoords[i]);
+		}
+		console.log({outArray: array});
+		return array;
+	};
+
+	//Standard Boundries
 	var leftSide = [[0,0], [40,0], [40,8], [35,8], [35,6], [34,6], [34,8], [4,8], [4,9], [3,9], [3,23], [7,23], [7,34], [5,34], [5,35], [4,35], [4,36], [3,36], [3,62], [40,62], [40,65], [0,65]];
 	var topRight = [[42,0], [80,0], [80,15], [78,15], [78,12], [77,12], [77,11], [78,11], [78,10], [77,10], [77,11], [75,11], [75,10], [55,10], [55,9], [53,9], [53,7], [49,7], [49,8], [48,8], [48,7], [46,7], [46,8], [42,8]];
-	var bottomRight = [[77,19], [80,19], [80,65], [42,65], [42,62], [69,62], [69,59], [73,59], [73,56], [77,56]];
+	var bottomRight = [[77,56], [77,19], [80,19], [80,65], [42,65], [42,62], [69,62], [69,59], [73,59], [73,56]];
 	var house = [[59,11], [68,11], [68,16], [69,16], [69,17], [59,17]];
 	var greenhouse = [[25,10], [32,10], [32,16], [25,16]];
 	var shipBox = [[71,14], [73,14], [73,15], [71,15]];
-	var littlePond = [[70,28], [75,28], [75,29], [76,29], [76,33], [75,33], [75,34], [71,34], [71,33], [70,33], [70,28]];
-	var bigPond = [[36,49], [43,49], [43,50], [44,50], [44,51], [46,51], [46,52], [47,52], [47,56], [46,56], [46,57], [45,57], [45,58], [42,58], [42,59], [37,59], [37,58], [36,58], [36,57], [34,57], [34,55], [33,55], [33,52], [34,52], [34,51], [35,51], [35,50], [36,50], [36,49]];
+	var littlePond = [[76,33], [75,33], [75,34], [71,34], [71,33], [70,33], [70,28], [75,28], [75,29], [76,29]];
+	var bigPond = [[36,49], [43,49], [43,50], [44,50], [44,51], [46,51], [46,52], [47,52], [47,56], [46,56], [46,57], [45,57], [45,58], [42,58], [42,59], [37,59], [37,58], [36,58], [36,57], [34,57], [34,55], [33,55], [33,52], [34,52], [34,51], [35,51], [35,50], [36,50]];
 	
-	var tempTopRight = [topRight[0]];
-	for(var i = 1; i < topRight.length; i++){
-		tempTopRight[i] = topRight[topRight.length - i];
-	}
-	var tempBottomRight = [bottomRight[0]];
-	for(var i = 1; i < bottomRight.length; i++){
-		tempBottomRight[i] = bottomRight[bottomRight.length - i];
-	}
-	console.log({origLeftSide: origLeftSide, isEqual: this.convertArrayToSVG(leftSide).indexOf(origLeftSide) === 0});
-	console.log({origTopRight: origTopRight, isEqual: this.convertArrayToSVG(tempTopRight).indexOf(origTopRight) === 0,});
-	console.log({origBottomRight: origBottomRight, isEqual: this.convertArrayToSVG(tempBottomRight).indexOf(origBottomRight) === 0});
-	console.log({origGreenhouse: origGreenhouse, isEqual: this.convertArrayToSVG(greenhouse).indexOf(origGreenhouse) === 0});
-	console.log({origHouse: origHouse, isEqual: this.convertArrayToSVG(house).indexOf(origHouse) === 0});
-	console.log({origShipBox: origShipBox, isEqual: this.convertArrayToSVG(shipBox).indexOf(origShipBox) === 0});
-	console.log({origLittlePond: origLittlePond, isEqual: this.convertArrayToSVG(littlePond).indexOf(origLittlePond) === 0});
-	console.log({origBigPond: origBigPond, isEqual: this.convertArrayToSVG(bigPond).indexOf(origBigPond) === 0});
-	
-    this.restrictedPath = [
-		this.convertArrayToSVG(leftSide),
-        this.convertArrayToSVG(topRight),
-        this.convertArrayToSVG(bottomRight),
-		this.convertArrayToSVG(greenhouse),
-        this.convertArrayToSVG(house),
-        this.convertArrayToSVG(shipBox),
-        this.convertArrayToSVG(littlePond),
-        this.convertArrayToSVG(bigPond)
-    ].join('');
+    this.restrictedPath =
+		this.convertArrayToSVG(leftSide) +
+        this.convertArrayToSVG(topRight) +
+        this.convertArrayToSVG(bottomRight) +
+		this.convertArrayToSVG(greenhouse) +
+        this.convertArrayToSVG(house) +
+        this.convertArrayToSVG(shipBox) +
+        this.convertArrayToSVG(littlePond) +
+        this.convertArrayToSVG(bigPond);
 
-    // TODO: actually use correct path
-    this.restrictedBuildingArea = this.R.path(this.restrictedPath);
+	//Building Boundries, buildings cant go in these areas, while normal equipment can
+	//First off, some custom boundries
+	var greenhouseBuildings = [[24,10], [35,10], [35,16], [33,16], [33,17], [31,17], [31,18], [26,18], [26,17], [24,17]];
+	var topRightBuildings = [[72,18], [72,16], [71,16], [71,17], [70,17], [70,18], [58,18], [58,14], [57,14], [57,13], [56,13], [56,12], [55,12], [55,11], [54,11], [54,9], [53,9], [53,7], [49,7], [49,8], [48,8], [48,7], [47,7], [47,8], [46,8], [46,9], [41,9], [41,0], [80,0], [80,18]]; //This replaces the normal house, shipBox, and topRight
+	
+	//Now, let's update the existing ones.
+	var bottomRightBuildings = this.replaceCoordinateSet(bottomRight, [[77,56], [77,19]], [[76,56], [76,19]]);//The shadowy area isnt for buildings
+	var leftSideBuildings = this.replaceCoordinateSet(leftSide,[[40,8], [35,8], [35,6], [34,6], [34,8], [4,8], [4,9], [3,9]], [[40,9], [5,9], [5,10], [4,10], [4,11], [3,11]]); //The top shadowy area isn't for building, so we can also drop teh save entrance
+	leftSideBuildings = this.replaceCoordinateSet(leftSide,[[5,34], [5,35], [4,35], [4,36], [3,36]], [[7,34], [6,34], [6,35], [5,35], [5,36], [4,36], [4,37], [3,37]]); //This is the shadowy part under the left cliface halfway down
+	
+	//Now, the fun part, the lake is close enough to the bottom right, we should combine it. In addition, there are a few squares beween the bottom right, top, AND left side that are all unusable, effectively making all of the outside one big boundry. Lets combine them all, adding extra points as needed
+	var outerBoundForBuildings = this.rotateArrayStartPoint(bottomRightBuildings, [76,19]).concat(littlePond);
+	outerBoundForBuildings = this.rotateArrayStartPoint(outerBoundForBuildings, [80,19]).concat([[78,19], [78,18]], this.rotateArrayStartPoint(topRightBuildings, [72,18]), [[79,18], [79,19]]);
+	outerBoundForBuildings = this.rotateArrayStartPoint(outerBoundForBuildings, [41,0]).concat([[41,2], [40,2]], this.rotateArrayStartPoint(leftSideBuildings, [40,9]));
+	
+    this.restrictedBuildingArea = this.R.path(
+		this.convertArrayToSVG(outerBoundForBuildings) +
+		this.convertArrayToSVG(greenhouseBuildings) + 
+        this.convertArrayToSVG(bigPond)
+	);
     this.restrictedBuildingArea.attr({
         fill: 'none',
         stroke: 'red'
@@ -781,7 +788,7 @@ Board.prototype.hideStuff = function hideStuff() {
         opacity: 0
     };
 
-    this.modifiyStuff(hideMe);
+    this.modifyStuff(hideMe);
 };
 
 /**
@@ -792,10 +799,10 @@ Board.prototype.showStuff = function showStuff() {
         opacity: 1
     };
 
-    this.modifiyStuff(showMe);
+    this.modifyStuff(showMe);
 };
 
-Board.prototype.modifiyStuff = function modifyStuff(attr) {
+Board.prototype.modifyStuff = function modifyStuff(attr) {
     this.helperY.attr(attr);
     this.helperX.attr(attr);
     this.grid.attr(attr);
